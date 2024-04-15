@@ -7,4 +7,16 @@ class Card
     @rank = rank
     @state = state
   end
+
+  def to_s
+    if @state == 'hidden'
+      '?'
+    else
+      "#{@rank}#{@suit}"
+    end
+  end
+
+  def reveal
+    @state = 'revealed'
+  end
 end
