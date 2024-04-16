@@ -1,6 +1,6 @@
 
 class Deck
-  attr_accessor :cards
+  attr_accessor :cards, :discard_pile
 
   def initialize
     @cards = [].tap do |cards|
@@ -11,6 +11,16 @@ class Deck
       end
       2.times { cards << Card.new('*', 'Joker') }
     end
+
+    @discard_pile = []
+  end
+
+  def deck_size
+    @cards.size
+  end
+
+  def discard_size
+    @discard_pile.size
   end
 
   def shuffle!
@@ -18,7 +28,16 @@ class Deck
     self
   end
 
-  def draw!
-    @cards.shift
+  def draw_from_deck!
+    @cards.pop
+  end
+
+  def draw_from_discard!
+    # must draw from top of discard pile (last discarded card)
+    @discard_pile.pop
+  end
+
+  def show_history
+    @discard_pile.each { |c| puts c }
   end
 end

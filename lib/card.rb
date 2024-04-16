@@ -10,7 +10,7 @@ class Card
 
   def to_s
     if @state == 'hidden'
-      '?'
+      "??"
     else
       "#{@rank}#{@suit}"
     end
