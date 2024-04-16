@@ -4,7 +4,8 @@ require_relative 'card'
 
 class Game
   def initialize
-    @player = Player.new
+    @players = [Player.new('Player 1', 'human'), Player.new('Player 2', 'computer')]
+    @current_player = @players.first
     @deck = Deck.new
   end
 
@@ -23,8 +24,10 @@ class Game
     arrange_draw_options
 
     loop do
-
-      puts "draw from where? (enter 1 or 2)\n\n(1)\n|--|\n|??|\n|--|\n\n(2)\n|--|\n|#{@deck.discard_pile.last}|\n|--|\n"
+      # puts
+      puts "\n\n#{@current_player.name}, choose where to draw from? (1 or 2)\n\n"
+      @current_player.show_hand
+      puts "\n(1) deck\n┏━━━┓\n┃?? \n┗━━━┛\n\n(2) discard pile\n┏━━━┓\n┃#{@deck.discard_pile.last}\n┗━━━┛\n"
 
       if draw_decision == '1'
         # method swap from eck
@@ -35,7 +38,7 @@ class Game
       end
 
       # next_player method
-      # ...
+      player_next
 
       # break if current_player.hand.all_revealed?
     end
@@ -44,27 +47,26 @@ class Game
   def deal
     puts 'shuffling deck'
     @deck.shuffle!
-
     puts 'dealing your cards'
-    6.times do
-      @player.hand << @deck.draw_from_deck!
-    end
 
-    puts 'revealing 2 cards'
-    reveal_two_cards
-    @player.hand.each { |c| puts c }
+    # iterate through array of players to deal each 6 cards and reveal 2
+    @players.each do |player|
+      6.times { player.hand << @deck.draw_from_deck! }
+      reveal_two_cards(player)
+
+      puts "\n\n#{player.name}'s hand:"
+      player.show_hand
+    end
   end
 
-  def reveal_two_cards
-    revealed_cards = @player.hand.sample(2)
+  def reveal_two_cards(player)
+    revealed_cards = player.hand.sample(2)
     revealed_cards.each do |card|
       card.state = 'revealed'
     end
   end
 
   def arrange_draw_options
-    puts "arranging options...\n\n"
-
     @deck.discard_pile << @deck.draw_from_deck!
     @deck.discard_pile.last.reveal
   end
@@ -97,9 +99,9 @@ class Game
     @deck.cards.last.reveal
 
     # player is prompted to swap with a card in their hand or to discard the revealed card
-    puts "\n|--|\n|#{@deck.cards.last}|\n|--|\n\n"
-    puts 'enter swap location, or type discard to discard:'
-    @player.show_hand
+    puts "\n┏━━━┓\n┃#{@deck.cards.last}\n┗━━━┛\n"
+    puts "which card to swap (1-6), or type 'discard' to discard:"
+    @current_player.show_hand
     puts
 
     swap_location = swap_decision(1)
@@ -108,38 +110,43 @@ class Game
       @deck.discard_pile << @deck.draw_from_deck!
     else
       # swap deck.cards.last with card in swap_decision position
-      puts 'before swap'
-      @player.show_hand
+      # puts 'before swap'
+      # puts "which card to swap?"
+      @current_player.show_hand
       puts
       swap_with_hand(@deck.draw_from_deck!, swap_location.to_i - 1)
-      puts 'after swap'
-      @player.show_hand
+      # puts 'after swap'
+      @current_player.show_hand
       puts
     end
   end
 
   def swap_with_hand(card_to_swap, hand_position)
     # reveal card if hidden
-    @player.hand[hand_position].reveal
+    @current_player.hand[hand_position].reveal
 
     # add chosen card from hand to discard pile
-    @deck.discard_pile << @player.hand[hand_position]
+    @deck.discard_pile << @current_player.hand[hand_position]
 
     # add last in discard pile (top card irl) to player's hand
-    @player.hand[hand_position] = card_to_swap
+    @current_player.hand[hand_position] = card_to_swap
     puts "discarded: #{@deck.discard_pile.last}\n\n"
   end
 
   def swap_from_discard
     # when swapping from discard, player only needs to decide which card in their hand to swap with top card of discard pile
-    puts 'before swap'
-    @player.show_hand
-    puts
+    # puts 'before swap'
     puts "which card to swap?"
-    swap_with_hand(@deck.draw_from_discard!, swap_decision(2).to_i - 1)
-    puts 'after swap'
-    @player.show_hand
+    @current_player.show_hand
     puts
+    swap_with_hand(@deck.draw_from_discard!, swap_decision(2).to_i - 1)
+    # puts 'after swap'
+    @current_player.show_hand
+    puts
+  end
+
+  def player_next
+    @current_player = @players.rotate!.first
   end
 
   def valid_draw_choice?(choice)

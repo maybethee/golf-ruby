@@ -9,7 +9,7 @@ class Deck
           cards << Card.new(suit, rank)
         end
       end
-      2.times { cards << Card.new('*', 'Joker') }
+      2.times { cards << Card.new('*', '*') }
     end
 
     @discard_pile = []
