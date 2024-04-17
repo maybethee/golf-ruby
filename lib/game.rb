@@ -4,6 +4,8 @@ require_relative 'card'
 require_relative 'score_calc'
 
 class Game
+  RANK_CONVERSION = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 10, 'Q': 10, 'K': 0, '*': -2 }.freeze
+
   def initialize
     @players = [Player.new('Player 1', 'human'), Player.new('Player 2', 'computer')]
     @current_player = @players.first
@@ -35,12 +37,10 @@ class Game
     loop do
       display_player_turn_prompt
 
-      if draw_decision == '1'
-        # method swap from deck
-        swap_from_deck
+      if @current_player.type == 'human'
+        human_turn
       else
-        # method swap from discard
-        swap_from_discard
+        computer_turn
       end
 
       break if @current_player.all_revealed?
@@ -80,6 +80,46 @@ class Game
     puts "\n#{@current_player.name}, choose where to draw from? (1 or 2)\n\n"
     @current_player.show_hand
     puts "\n(1) deck\n┏━━━┓\n┃?? \n┗━━━┛\n\n(2) discard pile\n┏━━━┓\n┃#{@deck.discard_pile.last}\n┗━━━┛\n"
+  end
+
+  def human_turn
+    if draw_decision == '1'
+      # method swap from deck
+      swap_from_deck
+    else
+      # method swap from discard
+      swap_from_discard
+    end
+  end
+
+  def computer_turn
+    # if discard pile card < 6, swap with random hidden card
+    if RANK_CONVERSION.fetch(@deck.discard_pile.last.rank.to_sym) < 6
+      # swap with random hidden card in hand
+      swap_with_hand(@deck.draw_from_discard!, random_hidden_card)
+      puts "#{@current_player.name} drew from discard"
+    else
+      # else, draw from deck
+      @deck.cards.last.reveal
+      # check again if card < 6
+      if RANK_CONVERSION.fetch(@deck.cards.last.rank.to_sym) < 6
+        swap_with_hand(@deck.draw_from_deck!, random_hidden_card)
+        puts "#{@current_player.name} drew from deck"
+      else
+        # discard if computer can't find card < 6
+        @deck.discard_pile << @deck.draw_from_deck!
+        puts "#{@current_player.name} discarded drawn card"
+      end
+    end
+    @current_player.show_hand
+  end
+
+  def random_hidden_card
+    # array of indeces satisfying condition of being hidden
+    indices = @current_player.hand.each_index.select { |card| @current_player.hand[card].state == 'hidden' }
+
+    # return random index from that array
+    indices.sample
   end
 
   # gets user input on which pile to draw/swap from
@@ -156,9 +196,7 @@ class Game
 
   def reveal_all_cards
     @players.each do |player|
-      player.hand.each do |card|
-        card.reveal
-      end
+      player.hand.each(&:reveal)
       player.show_hand
     end
   end

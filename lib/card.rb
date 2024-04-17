@@ -19,4 +19,8 @@ class Card
   def reveal
     @state = 'revealed'
   end
+
+  def hidden?
+    @state == 'hidden'
+  end
 end
