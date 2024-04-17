@@ -1,6 +1,7 @@
 require_relative 'player'
 require_relative 'deck'
 require_relative 'card'
+require_relative 'score_calc'
 
 class Game
   def initialize
@@ -11,10 +12,10 @@ class Game
 
   def play
     hole = 1
-    # until hole >= 10
+    until hole >= 10
       play_hole(hole)
-      # hole += 1
-    # end
+      hole += 1
+    end
   end
 
   def play_hole(hole)
@@ -22,25 +23,30 @@ class Game
 
     deal
     arrange_draw_options
+    hole_turn_loop
 
+    puts "round over!\n\nhole #{hole} scores:"
+
+    reveal_all_cards
+    hole_scores
+  end
+
+  def hole_turn_loop
     loop do
-      # puts
-      puts "\n\n#{@current_player.name}, choose where to draw from? (1 or 2)\n\n"
-      @current_player.show_hand
-      puts "\n(1) deck\n┏━━━┓\n┃?? \n┗━━━┛\n\n(2) discard pile\n┏━━━┓\n┃#{@deck.discard_pile.last}\n┗━━━┛\n"
+      display_player_turn_prompt
 
       if draw_decision == '1'
-        # method swap from eck
+        # method swap from deck
         swap_from_deck
       else
         # method swap from discard
         swap_from_discard
       end
 
-      # next_player method
-      player_next
+      break if @current_player.all_revealed?
 
-      # break if current_player.hand.all_revealed?
+      # next_player method if round continues
+      player_next
     end
   end
 
@@ -54,7 +60,6 @@ class Game
       6.times { player.hand << @deck.draw_from_deck! }
       reveal_two_cards(player)
 
-      puts "\n\n#{player.name}'s hand:"
       player.show_hand
     end
   end
@@ -71,6 +76,12 @@ class Game
     @deck.discard_pile.last.reveal
   end
 
+  def display_player_turn_prompt
+    puts "\n#{@current_player.name}, choose where to draw from? (1 or 2)\n\n"
+    @current_player.show_hand
+    puts "\n(1) deck\n┏━━━┓\n┃?? \n┗━━━┛\n\n(2) discard pile\n┏━━━┓\n┃#{@deck.discard_pile.last}\n┗━━━┛\n"
+  end
+
   # gets user input on which pile to draw/swap from
   def draw_decision
     loop do
@@ -80,6 +91,13 @@ class Game
 
       puts error_message
     end
+  end
+
+  def swap_prompt
+    puts "\n┏━━━┓\n┃#{@deck.cards.last}\n┗━━━┛\n"
+    puts "which card to swap (1-6), or type 'discard' to discard:"
+    @current_player.show_hand
+    puts
   end
 
   # gets user input on which card from hand to swap with chosen pile-card
@@ -99,10 +117,7 @@ class Game
     @deck.cards.last.reveal
 
     # player is prompted to swap with a card in their hand or to discard the revealed card
-    puts "\n┏━━━┓\n┃#{@deck.cards.last}\n┗━━━┛\n"
-    puts "which card to swap (1-6), or type 'discard' to discard:"
-    @current_player.show_hand
-    puts
+    swap_prompt
 
     swap_location = swap_decision(1)
     if swap_location == 'd'
@@ -110,14 +125,10 @@ class Game
       @deck.discard_pile << @deck.draw_from_deck!
     else
       # swap deck.cards.last with card in swap_decision position
-      # puts 'before swap'
-      # puts "which card to swap?"
       @current_player.show_hand
-      puts
+      # swap_location becomes equivalent hand index after - 1
       swap_with_hand(@deck.draw_from_deck!, swap_location.to_i - 1)
-      # puts 'after swap'
       @current_player.show_hand
-      puts
     end
   end
 
@@ -135,14 +146,30 @@ class Game
 
   def swap_from_discard
     # when swapping from discard, player only needs to decide which card in their hand to swap with top card of discard pile
-    # puts 'before swap'
-    puts "which card to swap?"
+    puts 'which card to swap?'
     @current_player.show_hand
     puts
     swap_with_hand(@deck.draw_from_discard!, swap_decision(2).to_i - 1)
-    # puts 'after swap'
     @current_player.show_hand
     puts
+  end
+
+  def reveal_all_cards
+    @players.each do |player|
+      player.hand.each do |card|
+        card.reveal
+      end
+      player.show_hand
+    end
+  end
+
+  def hole_scores
+    @players.each do |player|
+      player_score = ScoreCalculator.new(player.hand)
+      hole_score = player_score.calculate
+      puts "\n#{player.name}: #{hole_score} points"
+      # Scoreboard.add_hole_score(player, hole_score)
+    end
   end
 
   def player_next
