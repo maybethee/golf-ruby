@@ -17,6 +17,10 @@ class Player
     puts
   end
 
+  def reset_hand
+    @hand = []
+  end
+
   def all_revealed?
     @hand.all? { |card| card.state != 'hidden' }
   end
