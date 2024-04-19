@@ -1,8 +1,8 @@
 class Hole
   RANK_CONVERSION = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 10, 'Q': 10, 'K': 0, '*': -2 }.freeze
 
-  def initialize(players_array)
-    @players = players_array
+  def initialize(players)
+    @players = players
     @current_player = @players.first
     @deck = Deck.new
   end
@@ -18,7 +18,6 @@ class Hole
 
     reveal_all_cards
     hole_scores
-
   end
 
   def hole_turn_loop
@@ -194,7 +193,7 @@ class Hole
       player_score = ScoreCalculator.new(player.hand)
       hole_score = player_score.calculate
       puts "\n#{player.name}: #{hole_score} points"
-      # Scoreboard.add_hole_score(player, hole_score)
+      player.add_hole_score(hole_score)
     end
   end
 
